@@ -1,0 +1,196 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include<assert.h>
+#define MAX_CHARACTERS 1005
+#define MAX_PARAGRAPHS 5
+                           //Querying the Document
+/**
+ * Splits a string by a delimiter and returns an array of tokens (char**).
+ * It skips empty tokens and modifies the input string in place.
+ */
+char** split_by_delimiter(char* text, char delimiter, int* count) {
+    if (!text || *text == '\0') {
+        *count = 0;
+        return NULL;
+    }
+    
+    // Allocate space for the maximum possible number of tokens
+    int max_tokens = strlen(text) + 1;
+    char** tokens = (char**)malloc(max_tokens * sizeof(char*));
+    int token_index = 0;
+    
+    char* current = text;
+    
+    while (*current != '\0') {
+        // Skip leading delimiters/spaces (handles multiple spaces, spaces after '.', etc.)
+        while (*current == delimiter || *current == ' ') {
+            current++;
+        }
+        
+        if (*current == '\0') {
+            break; // Reached the end
+        }
+
+        // Current points to the start of a valid token
+        tokens[token_index++] = current;
+
+        // Find the end of the token
+        char* end = current;
+        while (*end != '\0' && *end != delimiter) {
+            end++;
+        }
+
+        if (*end == delimiter) {
+            *end = '\0'; // Null-terminate the current token
+            current = end + 1; // Start search for the next token
+        } else {
+            current = end; // Reached the end of the string
+        }
+    }
+    
+    *count = token_index;
+
+    // Reallocate to the exact size for memory efficiency, or free if empty
+    if (token_index == 0) {
+        free(tokens);
+        return NULL;
+    }
+    
+    return (char**)realloc(tokens, *count * sizeof(char*));
+}
+
+
+char**** get_document(char* text) {
+    // 1. Split text into Paragraphs (delimiter: '\n')
+    int paragraph_count;
+    char** paragraphs = split_by_delimiter(text, '\n', &paragraph_count);
+
+    if (paragraph_count == 0) return NULL;
+
+    char**** document = (char****)malloc((paragraph_count + 1) * sizeof(char***));
+    
+    for (int i = 0; i < paragraph_count; i++) {
+        char* paragraph_text = paragraphs[i];
+        
+        // 2. Split paragraph into Sentences (delimiter: '.')
+        int sentence_count;
+        char** sentences = split_by_delimiter(paragraph_text, '.', &sentence_count);
+
+        if (sentence_count == 0) {
+            document[i] = NULL;
+            continue;
+        }
+        
+        char*** paragraph = (char***)malloc((sentence_count + 1) * sizeof(char**));
+        
+        for (int j = 0; j < sentence_count; j++) {
+            char* sentence_text = sentences[j];
+            
+            // 3. Split sentence into Words (delimiter: ' ')
+            int word_count;
+            char** words = split_by_delimiter(sentence_text, ' ', &word_count);
+
+            paragraph[j] = words;
+        }
+        paragraph[sentence_count] = NULL;
+        document[i] = paragraph;
+        
+        free(sentences); // Free the array of pointers, not the data
+    }
+    document[paragraph_count] = NULL; 
+    
+    free(paragraphs); // Free the array of pointers, not the data
+    
+    return document;
+}
+
+char*** kth_paragraph(char**** document, int k) {
+    return document[k - 1];
+}
+
+char** kth_sentence_in_mth_paragraph(char**** document, int k, int m) {
+    return document[m - 1][k - 1];
+}
+
+char* kth_word_in_mth_sentence_of_nth_paragraph(char**** document, int k, int m, int n) {
+    return document[n - 1][m - 1][k - 1];
+}
+
+char* get_input_text() {	
+    int paragraph_count;
+    scanf("%d", &paragraph_count);
+
+    char p[MAX_PARAGRAPHS][MAX_CHARACTERS], doc[MAX_CHARACTERS];
+    memset(doc, 0, sizeof(doc));
+    getchar();
+    for (int i = 0; i < paragraph_count; i++) {
+        scanf("%[^\n]%*c", p[i]);
+        strcat(doc, p[i]);
+        if (i != paragraph_count - 1)
+            strcat(doc, "\n");
+    }
+
+    char* returnDoc = (char*)malloc((strlen (doc)+1) * (sizeof(char)));
+    strcpy(returnDoc, doc);
+    return returnDoc;
+}
+
+void print_word(char* word) {
+    printf("%s", word);
+}
+
+void print_sentence(char** sentence) {
+    int word_count;
+    scanf("%d", &word_count);
+    for(int i = 0; i < word_count; i++){
+        printf("%s", sentence[i]);
+        if( i != word_count - 1)
+            printf(" ");
+    }
+} 
+
+void print_paragraph(char*** paragraph) {
+    int sentence_count;
+    scanf("%d", &sentence_count);
+    for (int i = 0; i < sentence_count; i++) {
+        print_sentence(*(paragraph + i));
+        printf(".");
+    }
+}
+
+int main() 
+{
+    char* text = get_input_text();
+    char**** document = get_document(text);
+
+    int q;
+    scanf("%d", &q);
+
+    while (q--) {
+        int type;
+        scanf("%d", &type);
+
+        if (type == 3){
+            int k, m, n;
+            scanf("%d %d %d", &k, &m, &n);
+            char* word = kth_word_in_mth_sentence_of_nth_paragraph(document, k, m, n);
+            print_word(word);
+        }
+
+        else if (type == 2){
+            int k, m;
+            scanf("%d %d", &k, &m);
+            char** sentence = kth_sentence_in_mth_paragraph(document, k, m);
+            print_sentence(sentence);
+        }
+
+        else{
+            int k;
+            scanf("%d", &k);
+            char*** paragraph = kth_paragraph(document, k);
+            print_paragraph(paragraph);
+        }
+        printf("\n");
+    }     
+}
