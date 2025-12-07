@@ -1,0 +1,18 @@
+ #include <stdio.h>
+         //Sum of Digits of a Five Digit Number 
+int main() {
+    int n;
+    scanf("%d", &n);   // read the 5-digit number
+    
+    int sum = 0;
+    
+    // extract digits one by one using % and /
+    while (n > 0) {
+        sum += n % 10;   // add last digit
+        n /= 10;         // remove last digit
+    }
+    
+    printf("%d\n", sum);  // print sum of digits
+    
+    return 0;
+}
